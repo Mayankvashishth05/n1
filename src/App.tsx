@@ -239,7 +239,7 @@ export default function App() {
             <div className="inline-flex items-center space-x-3 bg-white/5 pl-2 pr-4 py-1.5 rounded-full border border-white/10 text-xs font-mono font-medium tracking-widest uppercase shadow-inner shadow-white/5 backdrop-blur-sm">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-black/45 border border-white/10 flex items-center justify-center shrink-0">
                 <img
-                  src="/src/assets/images/NDS LOGO R.png"
+                  src="/logo.png"
                   alt="NIORPIXEL Logo Badge"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -631,7 +631,7 @@ export default function App() {
               <div className="glow-card p-3 rounded-2xl max-w-sm rotate-[-1deg] hover:rotate-0 transition-transform duration-300">
                 <div className="relative border border-white/10 overflow-hidden rounded-xl bg-zinc-900">
                   <img
-                    src="/src/assets/images/NDS LOGO R.png"
+                    src="/logo.png"
                     alt="Niorpixel's Logo Detail"
                     referrerPolicy="no-referrer"
                     className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity"
@@ -888,7 +888,7 @@ export default function App() {
             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => scrollToAnchor('home')}>
               <div className="relative w-10 h-10 overflow-hidden rounded-full border border-white/10 flex items-center justify-center bg-black/45 hover:scale-105 transition-transform">
                 <img
-                  src="/src/assets/images/NDS LOGO R.png"
+                  src="/logo.png"
                   alt="NIORPIXEL Logo"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

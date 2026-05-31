@@ -27,7 +27,7 @@ export default function WhatsAppButton() {
               <div className="relative shrink-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 flex items-center justify-center bg-black/45">
                   <img
-                    src="/src/assets/images/NDS LOGO R.png"
+                    src="/logo.png"
                     alt="NIORPIXEL Logo"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"

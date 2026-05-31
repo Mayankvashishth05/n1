@@ -44,7 +44,7 @@ export default function PackagesPage({ onBackToHome, onSelectPackage }: Packages
           <div className="flex items-center space-x-3 select-none">
             <div className="relative w-8 h-8 overflow-hidden rounded-full border border-white/10 flex items-center justify-center bg-black/45">
               <img
-                src="/src/assets/images/NDS LOGO R.png"
+                src="/logo.png"
                 alt="NIORPIXEL Logo"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
