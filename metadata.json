@@ -1,0 +1,6 @@
+{
+  "name": "NIORPIXEL Design Studio",
+  "description": "A professional portfolio website for NIORPIXEL, a premium graphic design studio based in Gurugram, India. Features dynamic services, reviews, quotes, and a secret admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

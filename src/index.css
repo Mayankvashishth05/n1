@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-brand-dark: #1b1b1b;
+  --color-brand-light: #ece7e5;
+  --color-brand-accent: #6835d0;
+  --color-brand-shadow: #2cc3e6;
+}
+
+/* Custom styles for high fidelity effects */
+.custom-shadow-accent {
+  box-shadow: 6px 6px 0px 0px #6835d0;
+}
+
+.custom-shadow-brand {
+  box-shadow: 6px 6px 0px 0px #2cc3e6;
+}
+
+.custom-shadow-dark {
+  box-shadow: 6px 6px 0px 0px #1b1b1b;
+}
+
+.custom-shadow-light {
+  box-shadow: 6px 6px 0px 0px #ece7e5;
+}
+
+/* Immersive UI glow effect card */
+.glow-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -15px rgba(44, 195, 230, 0.2);
+  backdrop-filter: blur(12px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(104, 53, 208, 0.4);
+  box-shadow: 0 15px 35px -5px rgba(104, 53, 208, 0.3), 0 0 15px rgba(44, 195, 230, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Smooth custom marquee styling */
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee 120s linear infinite;
+}
+
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
