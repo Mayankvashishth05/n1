@@ -18,6 +18,12 @@ export default function FAQSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'All' | 'General' | 'Process' | 'Pricing' | 'Support' | 'Bonus'>('All');
   const [openIds, setOpenIds] = useState<number[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Automatically reset the expand toggle when query or active category changes
+  React.useEffect(() => {
+    setIsExpanded(false);
+  }, [searchQuery, activeCategory]);
 
   const toggleFAQ = (id: number) => {
     if (openIds.includes(id)) {
@@ -207,6 +213,11 @@ export default function FAQSection() {
     });
   }, [faqData, searchQuery, activeCategory]);
 
+  const visibleFAQs = useMemo(() => {
+    if (isExpanded) return filteredFAQs;
+    return filteredFAQs.slice(0, 5);
+  }, [filteredFAQs, isExpanded]);
+
   return (
     <section className="py-24 bg-[#1b1b1b] border-b border-white/5 relative overflow-hidden">
       {/* Background Soft Flare Accent */}
@@ -260,8 +271,8 @@ export default function FAQSection() {
 
         {/* Accordion Questions List */}
         <div className="space-y-3.5">
-          {filteredFAQs.length > 0 ? (
-            filteredFAQs.map((faq) => {
+          {visibleFAQs.length > 0 ? (
+            visibleFAQs.map((faq) => {
               const isOpen = openIds.includes(faq.id);
               return (
                 <div 
@@ -305,6 +316,21 @@ export default function FAQSection() {
             </div>
           )}
         </div>
+
+        {/* Expand / Collapse Button */}
+        {filteredFAQs.length > 5 && (
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="bg-[#141414] hover:bg-brand-accent/20 border border-white/5 hover:border-[#2cc3e6]/50 text-[#ece7e5] px-6 py-3.5 font-display font-medium text-xs rounded-full tracking-widest uppercase transition-all duration-300 hover:translate-y-[-2px] cursor-pointer inline-flex items-center space-x-2.5 shadow-md"
+            >
+              <span>{isExpanded ? 'Show Less' : 'All FAQs'}</span>
+              <span className="text-[#2cc3e6] text-[10px] font-mono font-medium">
+                ({isExpanded ? 'Collapse' : `+${filteredFAQs.length - 5} More FAQs`})
+              </span>
+            </button>
+          </div>
+        )}
 
       </div>
     </section>
