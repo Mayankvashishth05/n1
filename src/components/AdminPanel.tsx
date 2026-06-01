@@ -26,7 +26,8 @@ import {
   getFirebaseQuotes,
   saveFirebaseQuote,
   deleteFirebaseQuote,
-  setPortfolioBootstrapped
+  setPortfolioBootstrapped,
+  subscribeFirebaseQuotes
 } from '../lib/firebase';
 
 interface AdminPanelProps {
@@ -152,14 +153,16 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
         setReviews(getStoredReviews());
       });
 
-    getFirebaseQuotes()
-      .then(items => {
+    // Real-time listener for incoming lead quotes/submissions
+    const unsubscribeQuotes = subscribeFirebaseQuotes(
+      (items) => {
         setQuotes(items);
-      })
-      .catch(err => {
-        console.error('Failed to load quotes from Firebase:', err);
+      },
+      (err) => {
+        console.error('Failed to subscribe to real-time quotes from Firebase. Loading offline fallback.', err);
         setQuotes(getStoredQuotes());
-      });
+      }
+    );
     
     // Default or stored custom passcode
     const storedPasscode = localStorage.getItem('niorpixel_admin_passcode');
@@ -168,6 +171,10 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     } else {
       setCustomPasscode('MayankNiorpixel2026');
     }
+
+    return () => {
+      unsubscribeQuotes();
+    };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc, getDocFromServer, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocFromServer, collection, getDocs, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { PortfolioItem, ClientReview, QuoteRequest } from '../types';
 import { INITIAL_PORTFOLIO, INITIAL_REVIEWS } from '../data';
@@ -237,4 +237,34 @@ export async function deleteFirebaseQuote(id: string): Promise<void> {
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
+}
+
+export function subscribeFirebaseQuotes(
+  onUpdate: (quotes: QuoteRequest[]) => void,
+  onError?: (err: unknown) => void
+): () => void {
+  const collectionName = 'quotes';
+  const q = collection(db, collectionName);
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const items: QuoteRequest[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as QuoteRequest;
+        items.push({
+          ...data,
+          id: doc.id
+        });
+      });
+      // Sort by timestamp descending
+      items.sort((a, b) => {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
+      onUpdate(items);
+    },
+    (error) => {
+      console.error('Real-time snapshot error for quotes:', error);
+      if (onError) onError(error);
+    }
+  );
 }
