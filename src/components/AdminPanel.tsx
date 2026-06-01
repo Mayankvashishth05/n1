@@ -16,6 +16,11 @@ import {
   getStoredQuotes, saveStoredQuotes,
   PORTFOLIO_CATEGORIES
 } from '../data';
+import {
+  getFirebasePortfolio,
+  saveFirebasePortfolioItem,
+  deleteFirebasePortfolioItem
+} from '../lib/firebase';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -45,14 +50,49 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const compressAndSetImage = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setNewImgUrl(compressedDataUrl);
+        } else {
+          setNewImgUrl(event.target?.result as string);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewImgUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      compressAndSetImage(file);
     }
   };
 
@@ -70,11 +110,7 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewImgUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      compressAndSetImage(file);
     }
   };
 
@@ -89,7 +125,14 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
 
   useEffect(() => {
     // Load state
-    setPortfolio(getStoredPortfolio());
+    getFirebasePortfolio()
+      .then(items => {
+        setPortfolio(items);
+      })
+      .catch(err => {
+        console.error('Failed to load portfolio items from Firebase:', err);
+        setPortfolio(getStoredPortfolio());
+      });
     setReviews(getStoredReviews());
     setQuotes(getStoredQuotes());
     
@@ -114,7 +157,7 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     }
   };
 
-  const handleAddPortfolio = (e: React.FormEvent) => {
+  const handleAddPortfolio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDesc) {
       alert('Please fill out Project Title and Description');
@@ -122,30 +165,33 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     }
 
     if (editingItem) {
-      const updated = portfolio.map(item => {
-        if (item.id === editingItem.id) {
-          return {
-            ...item,
-            title: newTitle,
-            category: newCategory,
-            description: newDesc,
-            imageUrl: newImgUrl,
-            client: newClient || 'Niorpixel Client'
-          };
-        }
-        return item;
-      });
+      const updatedItem: PortfolioItem = {
+        ...editingItem,
+        title: newTitle,
+        category: newCategory,
+        description: newDesc,
+        imageUrl: newImgUrl,
+        client: newClient || 'Niorpixel Client'
+      };
 
-      setPortfolio(updated);
-      saveStoredPortfolio(updated);
-      onRefreshData();
+      try {
+        await saveFirebasePortfolioItem(updatedItem);
+        const updated = portfolio.map(item => item.id === editingItem.id ? updatedItem : item);
+        setPortfolio(updated);
+        saveStoredPortfolio(updated);
+        onRefreshData();
 
-      setEditingItem(null);
-      setNewTitle('');
-      setNewDesc('');
-      setNewClient('');
-      setSuccessMsg('Portfolio item updated successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
+        setEditingItem(null);
+        setNewTitle('');
+        setNewDesc('');
+        setNewClient('');
+        setNewImgUrl('/logo.png');
+        setSuccessMsg('Portfolio item updated successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } catch (err) {
+        console.error('Failed to update portfolio item in Firebase:', err);
+        alert('Failed to update portfolio item: ' + (err instanceof Error ? err.message : String(err)));
+      }
     } else {
       const newItem: PortfolioItem = {
         id: `custom-${Date.now()}`,
@@ -158,17 +204,24 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
         isFeatured: true
       };
 
-      const updated = [newItem, ...portfolio];
-      setPortfolio(updated);
-      saveStoredPortfolio(updated);
-      onRefreshData();
+      try {
+        await saveFirebasePortfolioItem(newItem);
+        const updated = [newItem, ...portfolio];
+        setPortfolio(updated);
+        saveStoredPortfolio(updated);
+        onRefreshData();
 
-      // Reset fields
-      setNewTitle('');
-      setNewDesc('');
-      setNewClient('');
-      setSuccessMsg('Portfolio item added successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
+        // Reset fields
+        setNewTitle('');
+        setNewDesc('');
+        setNewClient('');
+        setNewImgUrl('/logo.png');
+        setSuccessMsg('Portfolio item added successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } catch (err) {
+        console.error('Failed to add portfolio item to Firebase:', err);
+        alert('Failed to add portfolio item: ' + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 
@@ -189,12 +242,18 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     setNewImgUrl('/logo.png');
   };
 
-  const handleDeletePortfolio = (id: string) => {
+  const handleDeletePortfolio = async (id: string) => {
     if (confirm('Are you sure you want to delete this project template?')) {
-      const updated = portfolio.filter(item => item.id !== id);
-      setPortfolio(updated);
-      saveStoredPortfolio(updated);
-      onRefreshData();
+      try {
+        await deleteFirebasePortfolioItem(id);
+        const updated = portfolio.filter(item => item.id !== id);
+        setPortfolio(updated);
+        saveStoredPortfolio(updated);
+        onRefreshData();
+      } catch (err) {
+        console.error('Failed to delete portfolio item from Firebase:', err);
+        alert('Failed to delete portfolio item: ' + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 

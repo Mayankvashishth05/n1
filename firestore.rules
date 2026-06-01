@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global safety net: deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Helper primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Custom schema/attribute checking for validation
+    function isValidPortfolioItem(reqData) {
+      return reqData.id is string && reqData.id.size() <= 128
+        && reqData.title is string && reqData.title.size() <= 200
+        && reqData.category is string && reqData.category.size() <= 100
+        && reqData.imageUrl is string && reqData.imageUrl.size() <= 10000000
+        && reqData.description is string && reqData.description.size() <= 2000
+        && reqData.date is string && reqData.date.size() <= 50
+        && reqData.client is string && reqData.client.size() <= 200
+        && (reqData.get('isFeatured', false) == true || reqData.get('isFeatured', false) == false);
+    }
+
+    // 3. Portfolio matches block
+    match /portfolio/{itemId} {
+      // Allow public read of portfolio showcase items
+      allow read: if true;
+      
+      // Enforce model validation on creation to prevent value poisoning or Denial of Wallet attacks
+      allow create: if isValidId(itemId) 
+        && isValidPortfolioItem(request.resource.data)
+        && request.resource.data.id == itemId;
+
+      // Ensure model schema holds on updates
+      allow update: if isValidId(itemId)
+        && isValidPortfolioItem(request.resource.data)
+        && request.resource.data.id == itemId;
+
+      // Allow deletion of showcase entries
+      allow delete: if isValidId(itemId);
+    }
+  }
+}

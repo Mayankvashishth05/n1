@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "PortfolioItem": {
+      "title": "PortfolioItem",
+      "description": "A design project showcase item in the studio portfolio",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the portfolio item" },
+        "title": { "type": "string", "description": "Showcase title" },
+        "category": { "type": "string", "description": "Design category" },
+        "imageUrl": { "type": "string", "description": "Base64 or url of design cover" },
+        "description": { "type": "string", "description": "Extended project synopsis" },
+        "date": { "type": "string", "description": "Creation date of project formatted YYYY-MM-DD" },
+        "client": { "type": "string", "description": "Client company name" },
+        "isFeatured": { "type": "boolean", "description": "Whether showcase is pinned on homepage" }
+      },
+      "required": ["id", "title", "category", "imageUrl", "description", "date", "client"]
+    }
+  },
+  "firestore": {
+    "portfolio/{id}": {
+      "schema": "PortfolioItem",
+      "description": "Collection of portfolio designs and case study items"
+    }
+  }
+}

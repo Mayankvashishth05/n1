@@ -142,7 +142,7 @@ export default function PortfolioArchive({
             </div>
 
             {/* Mobile / Secondary Dropdown select filter */}
-            <div className="relative flex items-center bg-[#141414] border border-white/10 rounded-full px-3.5 py-2">
+            <div className="sm:hidden relative flex items-center bg-[#141414] border border-white/10 rounded-full px-3.5 py-2">
               <Filter size={12} className="text-[#2cc3e6] mr-2 shrink-0" />
               <select
                 value={activeFilter}

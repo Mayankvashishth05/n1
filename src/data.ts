@@ -93,14 +93,17 @@ export const INITIAL_REVIEWS: ClientReview[] = [
 ];
 
 // Helper functions for LocalStorage management
+let inMemoryPortfolio: PortfolioItem[] | null = null;
+
 export const getStoredPortfolio = (): PortfolioItem[] => {
+  if (inMemoryPortfolio) return inMemoryPortfolio;
   if (typeof window === 'undefined') return INITIAL_PORTFOLIO;
   const stored = localStorage.getItem('niorpixel_portfolio');
   if (stored) {
     try {
       const items = JSON.parse(stored);
       if (Array.isArray(items)) {
-        return items.map((item: any) => {
+        inMemoryPortfolio = items.map((item: any) => {
           let cat = item.category || 'Logo Design';
           if (cat === 'Commercial Art & Branding') {
             cat = 'Posters and Flyers';
@@ -117,16 +120,25 @@ export const getStoredPortfolio = (): PortfolioItem[] => {
           }
           return { ...item, category: cat };
         });
+        return inMemoryPortfolio;
       }
     } catch (e) {
       console.error('Failed to parse stored portfolio', e);
     }
   }
-  return INITIAL_PORTFOLIO;
+  inMemoryPortfolio = [...INITIAL_PORTFOLIO];
+  return inMemoryPortfolio;
 };
 
 export const saveStoredPortfolio = (items: PortfolioItem[]) => {
-  localStorage.setItem('niorpixel_portfolio', JSON.stringify(items));
+  inMemoryPortfolio = items;
+  try {
+    localStorage.setItem('niorpixel_portfolio', JSON.stringify(items));
+    return true;
+  } catch (e) {
+    console.error('Failed to save portfolio items to localStorage:', e);
+    return false;
+  }
 };
 
 export const getStoredReviews = (): ClientReview[] => {

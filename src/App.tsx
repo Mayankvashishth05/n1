@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Layers, Target, Compass, ArrowRight, User, Phone, 
   Mail, MapPin, Instagram, Facebook, Calendar, MessageSquare, ShieldCheck, Lock,
-  Image, FileText, Layout, CreditCard, Check, Clock, Flame, Shield
+  Image, FileText, Layout, CreditCard, Check, Clock, Flame, Shield, Filter
 } from 'lucide-react';
 
 import Header from './components/Header';
@@ -27,6 +27,7 @@ import { PortfolioItem, ClientReview, QuoteRequest } from './types';
 import { 
   getStoredPortfolio, saveStoredPortfolio, getStoredReviews, getStoredQuotes, saveStoredQuotes, PORTFOLIO_CATEGORIES
 } from './data';
+import { getFirebasePortfolio } from './lib/firebase';
 
 export default function App() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
@@ -83,8 +84,14 @@ export default function App() {
   };
 
   // Load custom stored data
-  const refreshStateData = () => {
-    setPortfolioItems(getStoredPortfolio());
+  const refreshStateData = async () => {
+    try {
+      const items = await getFirebasePortfolio();
+      setPortfolioItems(items);
+    } catch (err) {
+      console.error('Failed to load portfolio items from Firebase:', err);
+      setPortfolioItems(getStoredPortfolio());
+    }
     setClientReviews(getStoredReviews());
   };
 
@@ -95,7 +102,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    refreshStateData();
+    refreshStateData().catch(err => {
+      console.error('Unhandled error in refreshStateData:', err);
+    });
 
     // Setup global backdoor keyboard trigger: Shift + A
     const handleBackdoorKeys = (e: KeyboardEvent) => {
@@ -195,7 +204,6 @@ export default function App() {
           <PortfolioModal 
             item={selectedItem} 
             onClose={() => setSelectedItem(null)} 
-            onDelete={handleDeletePortfolioItem}
           />
         )}
         <WhatsAppButton />
@@ -516,21 +524,43 @@ export default function App() {
               <h2 className="text-4xl sm:text-5xl font-display font-medium tracking-tight text-[#ece7e5]">Selected Work</h2>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveFilter(cat)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer ${
-                    activeFilter === cat 
-                      ? 'bg-white text-black border-white font-bold' 
-                      : 'bg-white/5 text-[#ece7e5]/75 border-white/10 hover:border-white/20'
-                  }`}
+            {/* Dual Filter System: Desktop Pills + Mobile Dropdown Selection */}
+            <div className="flex items-center gap-4">
+              {/* Category Filter Pills (Desktop and Tablet) */}
+              <div className="hidden sm:flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveFilter(cat)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer ${
+                      activeFilter === cat 
+                        ? 'bg-white text-black border-white font-bold' 
+                        : 'bg-white/5 text-[#ece7e5]/75 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    {cat.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Mobile Category Dropdown Menu */}
+              <div className="sm:hidden relative flex items-center bg-[#1b1b1b] border border-white/10 rounded-xl px-4 py-2.5 w-full min-w-[200px]">
+                <Filter size={12} className="text-[#2cc3e6] mr-2 shrink-0" />
+                <select
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                  className="bg-transparent text-xs text-[#ece7e5] font-mono focus:outline-none cursor-pointer pr-6 w-full appearance-none"
                 >
-                  {cat.toUpperCase()}
-                </button>
-              ))}
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat} className="bg-[#141414] text-[#ece7e5]">
+                      Filter: {cat}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white/40">
+                  <span className="text-[10px]">▼</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -976,7 +1006,6 @@ export default function App() {
       <PortfolioModal 
         item={selectedItem} 
         onClose={() => setSelectedItem(null)} 
-        onDelete={handleDeletePortfolioItem}
       />
 
       {/* 12. Hidden Private Backdoor Dashboard */}
