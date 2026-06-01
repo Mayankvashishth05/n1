@@ -15,12 +15,53 @@
         "isFeatured": { "type": "boolean", "description": "Whether showcase is pinned on homepage" }
       },
       "required": ["id", "title", "category", "imageUrl", "description", "date", "client"]
+    },
+    "ClientReview": {
+      "title": "ClientReview",
+      "description": "A review or testimonial submitted by a client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID of the review" },
+        "name": { "type": "string", "description": "Name of the reviewer" },
+        "role": { "type": "string", "description": "Role/title of the reviewer" },
+        "reviewText": { "type": "string", "description": "Testimonial text statement" },
+        "date": { "type": "string", "description": "Date of review submission" },
+        "rating": { "type": "number", "description": "Rating score out of 5 stars" }
+      },
+      "required": ["id", "name", "reviewText"]
+    },
+    "QuoteRequest": {
+      "title": "QuoteRequest",
+      "description": "An inbound project quote / lead request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID of the quote request" },
+        "fullName": { "type": "string", "description": "Full name of interested partner" },
+        "email": { "type": "string", "description": "Email address" },
+        "mobile": { "type": "string", "description": "Mobile contact number" },
+        "message": { "type": "string", "description": "Inbound inquiry message text" },
+        "timestamp": { "type": "string", "description": "Timestamp of quote submission" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "contacted"], "description": "Follow-up status" }
+      },
+      "required": ["id", "fullName", "email", "mobile", "message", "timestamp", "status"]
     }
   },
   "firestore": {
     "portfolio/{id}": {
       "schema": "PortfolioItem",
       "description": "Collection of portfolio designs and case study items"
+    },
+    "reviews/{id}": {
+      "schema": "ClientReview",
+      "description": "Collection of dynamic client reviews and testimonials"
+    },
+    "quotes/{id}": {
+      "schema": "QuoteRequest",
+      "description": "Collection of inbound lead quote applications"
+    },
+    "portfolio_settings/{id}": {
+      "schema": { "type": "object", "properties": { "bootstrapped": { "type": "boolean" } } },
+      "description": "System settings to prevent auto-population of deleted templates"
     }
   }
 }

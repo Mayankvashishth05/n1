@@ -27,7 +27,7 @@ import { PortfolioItem, ClientReview, QuoteRequest } from './types';
 import { 
   getStoredPortfolio, saveStoredPortfolio, getStoredReviews, getStoredQuotes, saveStoredQuotes, PORTFOLIO_CATEGORIES
 } from './data';
-import { getFirebasePortfolio } from './lib/firebase';
+import { getFirebasePortfolio, getFirebaseReviews, saveFirebaseQuote } from './lib/firebase';
 
 export default function App() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
@@ -92,7 +92,14 @@ export default function App() {
       console.error('Failed to load portfolio items from Firebase:', err);
       setPortfolioItems(getStoredPortfolio());
     }
-    setClientReviews(getStoredReviews());
+    
+    try {
+      const reviews = await getFirebaseReviews();
+      setClientReviews(reviews);
+    } catch (err) {
+      console.error('Failed to load reviews from Firebase:', err);
+      setClientReviews(getStoredReviews());
+    }
   };
 
   const handleDeletePortfolioItem = (id: string) => {
@@ -145,7 +152,7 @@ export default function App() {
   };
 
   // Submit quote request helper
-  const handleQuoteSubmit = (e: React.FormEvent) => {
+  const handleQuoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !emailAddress || !mobileNo || !userMessage) {
       alert('Please complete all form inputs to transform your brand!');
@@ -162,7 +169,13 @@ export default function App() {
       status: 'pending'
     };
 
-    // Save Quote
+    try {
+      await saveFirebaseQuote(newRequest);
+    } catch (err) {
+      console.error('Failed to save quote request to Firebase:', err);
+    }
+
+    // Save Quote locally as fallback
     const existingQuotes = getStoredQuotes();
     const updated = [newRequest, ...existingQuotes];
     saveStoredQuotes(updated);

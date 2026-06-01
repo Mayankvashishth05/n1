@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Lock, Unlock, Database, Plus, Trash, Eye, 
   Settings, MessageSquare, Layers, Check, Download, AlertCircle, FileText, Mail, Phone,
-  Upload, Image, Pencil
+  Upload, Image, Pencil, Clock
 } from 'lucide-react';
 import { PortfolioItem, ClientReview, QuoteRequest } from '../types';
 import { 
@@ -19,7 +19,14 @@ import {
 import {
   getFirebasePortfolio,
   saveFirebasePortfolioItem,
-  deleteFirebasePortfolioItem
+  deleteFirebasePortfolioItem,
+  getFirebaseReviews,
+  saveFirebaseReview,
+  deleteFirebaseReview,
+  getFirebaseQuotes,
+  saveFirebaseQuote,
+  deleteFirebaseQuote,
+  setPortfolioBootstrapped
 } from '../lib/firebase';
 
 interface AdminPanelProps {
@@ -37,6 +44,8 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [reviews, setReviews] = useState<ClientReview[]>([]);
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [isSavingAll, setIsSavingAll] = useState(false);
   const [customPasscode, setCustomPasscode] = useState('');
   const [selectedQuoteIds, setSelectedQuoteIds] = useState<string[]>([]);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
@@ -133,8 +142,24 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
         console.error('Failed to load portfolio items from Firebase:', err);
         setPortfolio(getStoredPortfolio());
       });
-    setReviews(getStoredReviews());
-    setQuotes(getStoredQuotes());
+    
+    getFirebaseReviews()
+      .then(items => {
+        setReviews(items);
+      })
+      .catch(err => {
+        console.error('Failed to load reviews from Firebase:', err);
+        setReviews(getStoredReviews());
+      });
+
+    getFirebaseQuotes()
+      .then(items => {
+        setQuotes(items);
+      })
+      .catch(err => {
+        console.error('Failed to load quotes from Firebase:', err);
+        setQuotes(getStoredQuotes());
+      });
     
     // Default or stored custom passcode
     const storedPasscode = localStorage.getItem('niorpixel_admin_passcode');
@@ -157,7 +182,7 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     }
   };
 
-  const handleAddPortfolio = async (e: React.FormEvent) => {
+  const handleAddPortfolio = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDesc) {
       alert('Please fill out Project Title and Description');
@@ -174,24 +199,16 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
         client: newClient || 'Niorpixel Client'
       };
 
-      try {
-        await saveFirebasePortfolioItem(updatedItem);
-        const updated = portfolio.map(item => item.id === editingItem.id ? updatedItem : item);
-        setPortfolio(updated);
-        saveStoredPortfolio(updated);
-        onRefreshData();
+      const updated = portfolio.map(item => item.id === editingItem.id ? updatedItem : item);
+      setPortfolio(updated);
 
-        setEditingItem(null);
-        setNewTitle('');
-        setNewDesc('');
-        setNewClient('');
-        setNewImgUrl('/logo.png');
-        setSuccessMsg('Portfolio item updated successfully!');
-        setTimeout(() => setSuccessMsg(''), 3000);
-      } catch (err) {
-        console.error('Failed to update portfolio item in Firebase:', err);
-        alert('Failed to update portfolio item: ' + (err instanceof Error ? err.message : String(err)));
-      }
+      setEditingItem(null);
+      setNewTitle('');
+      setNewDesc('');
+      setNewClient('');
+      setNewImgUrl('/logo.png');
+      setSuccessMsg('Portfolio item modified in draft. Click "Save & Publish Portfolio" below to submit changes.');
+      setTimeout(() => setSuccessMsg(''), 5000);
     } else {
       const newItem: PortfolioItem = {
         id: `custom-${Date.now()}`,
@@ -204,24 +221,16 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
         isFeatured: true
       };
 
-      try {
-        await saveFirebasePortfolioItem(newItem);
-        const updated = [newItem, ...portfolio];
-        setPortfolio(updated);
-        saveStoredPortfolio(updated);
-        onRefreshData();
+      const updated = [newItem, ...portfolio];
+      setPortfolio(updated);
 
-        // Reset fields
-        setNewTitle('');
-        setNewDesc('');
-        setNewClient('');
-        setNewImgUrl('/logo.png');
-        setSuccessMsg('Portfolio item added successfully!');
-        setTimeout(() => setSuccessMsg(''), 3000);
-      } catch (err) {
-        console.error('Failed to add portfolio item to Firebase:', err);
-        alert('Failed to add portfolio item: ' + (err instanceof Error ? err.message : String(err)));
-      }
+      // Reset fields
+      setNewTitle('');
+      setNewDesc('');
+      setNewClient('');
+      setNewImgUrl('/logo.png');
+      setSuccessMsg('New item queued in draft. Click "Save & Publish Portfolio" below to submit changes.');
+      setTimeout(() => setSuccessMsg(''), 5000);
     }
   };
 
@@ -242,22 +251,53 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     setNewImgUrl('/logo.png');
   };
 
-  const handleDeletePortfolio = async (id: string) => {
-    if (confirm('Are you sure you want to delete this project template?')) {
-      try {
-        await deleteFirebasePortfolioItem(id);
-        const updated = portfolio.filter(item => item.id !== id);
-        setPortfolio(updated);
-        saveStoredPortfolio(updated);
-        onRefreshData();
-      } catch (err) {
-        console.error('Failed to delete portfolio item from Firebase:', err);
-        alert('Failed to delete portfolio item: ' + (err instanceof Error ? err.message : String(err)));
-      }
+  const handleDeletePortfolio = (id: string) => {
+    if (confirm('Are you sure you want to remove this project? It will be deleted from your screen and permanently deleted upon publishing.')) {
+      const updated = portfolio.filter(item => item.id !== id);
+      setPortfolio(updated);
+      setDeletedIds(prev => [...prev, id]);
+      setSuccessMsg('Deleted project from screen. Click "Save & Publish Portfolio" below to publish live.');
+      setTimeout(() => setSuccessMsg(''), 5000);
     }
   };
 
-  const handleAddReview = (e: React.FormEvent) => {
+  const handlePublishPortfolio = async () => {
+    setIsSavingAll(true);
+    try {
+      // 1. Delete deleted items from Firestore
+      for (const id of deletedIds) {
+        try {
+          await deleteFirebasePortfolioItem(id);
+        } catch (err) {
+          console.error(`Failed to delete portfolio item ${id} during publish:`, err);
+        }
+      }
+
+      // 2. Save all current portfolio items to Firestore
+      for (const item of portfolio) {
+        await saveFirebasePortfolioItem(item);
+      }
+
+      // 3. Mark in portfolio_settings that we bootstrapped
+      await setPortfolioBootstrapped(true);
+
+      // 4. Save to local fallback storage
+      saveStoredPortfolio(portfolio);
+
+      // 5. Reset states and sync main application
+      setDeletedIds([]);
+      onRefreshData();
+      setSuccessMsg('All portfolio changes successfully published & saved live to Firebase!');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      console.error('Failed to publish portfolio to Firebase:', err);
+      alert('Failed to save to Firebase database: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSavingAll(false);
+    }
+  };
+
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!revName || !revText) {
       alert('Please fill out Reviewer Name and Review Text');
@@ -272,6 +312,12 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
       rating: revRating
     };
 
+    try {
+      await saveFirebaseReview(newRev);
+    } catch (err) {
+      console.error('Failed to save review to Firebase:', err);
+    }
+
     const updated = [newRev, ...reviews];
     setReviews(updated);
     saveStoredReviews(updated);
@@ -285,8 +331,13 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const handleDeleteReview = (id: string) => {
+  const handleDeleteReview = async (id: string) => {
     if (confirm('Are you sure you want to delete this review?')) {
+      try {
+        await deleteFirebaseReview(id);
+      } catch (err) {
+        console.error('Failed to delete review from Firebase:', err);
+      }
       const updated = reviews.filter(rev => rev.id !== id);
       setReviews(updated);
       saveStoredReviews(updated);
@@ -294,16 +345,31 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     }
   };
 
-  const handleUpdateQuoteStatus = (id: string, nextStatus: 'pending' | 'reviewed' | 'contacted') => {
+  const handleUpdateQuoteStatus = async (id: string, nextStatus: 'pending' | 'reviewed' | 'contacted') => {
+    const quoteToUpdate = quotes.find(q => q.id === id);
+    if (!quoteToUpdate) return;
+    const updatedQuote: QuoteRequest = { ...quoteToUpdate, status: nextStatus };
+
+    try {
+      await saveFirebaseQuote(updatedQuote);
+    } catch (err) {
+      console.error('Failed to update quote status on Firebase:', err);
+    }
+
     const updated = quotes.map(quote => 
-      quote.id === id ? { ...quote, status: nextStatus } : quote
+      quote.id === id ? updatedQuote : quote
     );
     setQuotes(updated);
     saveStoredQuotes(updated);
   };
 
-  const handleDeleteQuote = (id: string) => {
+  const handleDeleteQuote = async (id: string) => {
     if (confirm('Are you sure you want to delete this quote request?')) {
+      try {
+        await deleteFirebaseQuote(id);
+      } catch (err) {
+        console.error('Failed to delete quote from Firebase:', err);
+      }
       const updated = quotes.filter(quote => quote.id !== id);
       setQuotes(updated);
       saveStoredQuotes(updated);
@@ -325,10 +391,17 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
     }
   };
 
-  const handleBatchDeleteQuotes = () => {
+  const handleBatchDeleteQuotes = async () => {
     if (selectedQuoteIds.length === 0) return;
     const count = selectedQuoteIds.length;
     if (confirm(`Are you sure you want to delete all ${count} selected quote request(s)?`)) {
+      for (const id of selectedQuoteIds) {
+        try {
+          await deleteFirebaseQuote(id);
+        } catch (err) {
+          console.error(`Failed to delete quote ${id} from Firebase:`, err);
+        }
+      }
       const updated = quotes.filter(quote => !selectedQuoteIds.includes(quote.id));
       setQuotes(updated);
       saveStoredQuotes(updated);
@@ -704,6 +777,38 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
                         ))}
                       </div>
                     </div>
+
+                    {/* Draft Publish Panel */}
+                    <div className="bg-[#6835d0]/10 border-2 border-[#1b1b1b] p-5 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
+                      <div className="space-y-1 text-left">
+                        <h4 className="font-display font-bold text-sm text-brand-dark flex items-center space-x-1.5 leading-none">
+                          <Database size={15} className="text-[#6835d0]" />
+                          <span>Publish Outstanding Portfolio Changes</span>
+                        </h4>
+                        <p className="text-[10px] font-sans text-brand-dark/70 leading-relaxed max-w-xl">
+                          Your additions, edits, and deletions are saved locally as a draft. Click this button to save and publish those changes permanently to your Firebase cloud database.
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={handlePublishPortfolio}
+                        disabled={isSavingAll}
+                        className="w-full md:w-auto bg-[#6835d0] hover:bg-[#5224b0] disabled:opacity-50 text-[#ece7e5] px-5 py-3 font-display font-bold text-xs rounded-lg tracking-widest uppercase border-2 border-[#1b1b1b] custom-shadow-brand transition-all cursor-pointer flex items-center justify-center space-x-2"
+                      >
+                        {isSavingAll ? (
+                          <>
+                            <Clock size={12} className="animate-spin" />
+                            <span>Publishing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check size={12} />
+                            <span>Save & Publish Portfolio</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                   </div>
                 )}
 

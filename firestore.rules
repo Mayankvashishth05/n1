@@ -24,23 +24,52 @@ service cloud.firestore {
         && (reqData.get('isFeatured', false) == true || reqData.get('isFeatured', false) == false);
     }
 
-    // 3. Portfolio matches block
+    function isValidClientReview(reqData) {
+      return reqData.id is string && reqData.id.size() <= 128
+        && reqData.name is string && reqData.name.size() <= 200
+        && reqData.reviewText is string && reqData.reviewText.size() <= 4000
+        && reqData.get('role', '') is string && reqData.get('role', '').size() <= 200
+        && reqData.get('date', '') is string && reqData.get('date', '').size() <= 50
+        && reqData.get('rating', 5) is int && reqData.get('rating', 5) >= 0 && reqData.get('rating', 5) <= 5;
+    }
+
+    function isValidQuoteRequest(reqData) {
+      return reqData.id is string && reqData.id.size() <= 128
+        && reqData.fullName is string && reqData.fullName.size() <= 300
+        && reqData.email is string && reqData.email.size() <= 300
+        && reqData.mobile is string && reqData.mobile.size() <= 100
+        && reqData.message is string && reqData.message.size() <= 5000
+        && reqData.timestamp is string && reqData.timestamp.size() <= 100
+        && reqData.status is string && (reqData.status == 'pending' || reqData.status == 'reviewed' || reqData.status == 'contacted');
+    }
+
+    // 3. Match blocks
+    
+    // PORTFOLIO
     match /portfolio/{itemId} {
-      // Allow public read of portfolio showcase items
       allow read: if true;
-      
-      // Enforce model validation on creation to prevent value poisoning or Denial of Wallet attacks
-      allow create: if isValidId(itemId) 
-        && isValidPortfolioItem(request.resource.data)
-        && request.resource.data.id == itemId;
-
-      // Ensure model schema holds on updates
-      allow update: if isValidId(itemId)
-        && isValidPortfolioItem(request.resource.data)
-        && request.resource.data.id == itemId;
-
-      // Allow deletion of showcase entries
+      allow write: if isValidId(itemId) && isValidPortfolioItem(request.resource.data) && request.resource.data.id == itemId;
       allow delete: if isValidId(itemId);
+    }
+
+    // REVIEWS
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if isValidId(reviewId) && isValidClientReview(request.resource.data) && request.resource.data.id == reviewId;
+      allow delete: if isValidId(reviewId);
+    }
+
+    // INBOUND LEADS / QUOTES
+    match /quotes/{quoteId} {
+      allow read: if true;
+      allow write: if isValidId(quoteId) && isValidQuoteRequest(request.resource.data) && request.resource.data.id == quoteId;
+      allow delete: if isValidId(quoteId);
+    }
+
+    // SYSTEM PORTFOLIO SETTINGS
+    match /portfolio_settings/{settingsId} {
+      allow read: if true;
+      allow write: if isValidId(settingsId) && request.resource.data.bootstrapped is bool;
     }
   }
 }
