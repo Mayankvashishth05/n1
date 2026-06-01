@@ -199,13 +199,6 @@ export default function App() {
           setSelectedItem={setSelectedItem}
           onBackToHome={() => setCurrentPage('home')}
         />
-        {/* Dynamic Showcase Detail Overlay Modal */}
-        {selectedItem && (
-          <PortfolioModal 
-            item={selectedItem} 
-            onClose={() => setSelectedItem(null)} 
-          />
-        )}
         <WhatsAppButton />
       </div>
     );
@@ -1006,6 +999,8 @@ export default function App() {
       <PortfolioModal 
         item={selectedItem} 
         onClose={() => setSelectedItem(null)} 
+        items={filteredPortfolio}
+        onChangeItem={setSelectedItem}
       />
 
       {/* 12. Hidden Private Backdoor Dashboard */}

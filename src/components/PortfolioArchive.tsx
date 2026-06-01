@@ -9,6 +9,7 @@ import { ArrowLeft, Search, Filter, Layers, Briefcase, Calendar, User, ExternalL
 import { PortfolioItem } from '../types';
 import { PORTFOLIO_CATEGORIES } from '../data';
 import LazyImage from './LazyImage';
+import PortfolioModal from './PortfolioModal';
 
 interface PortfolioArchiveProps {
   portfolioItems: PortfolioItem[];
@@ -251,6 +252,16 @@ export default function PortfolioArchive({
           </button>
         </div>
       </footer>
+
+      {/* Dynamic Archive Showcase Detail Overlay Modal */}
+      {selectedItem && (
+        <PortfolioModal 
+          item={selectedItem} 
+          onClose={() => setSelectedItem(null)} 
+          items={filteredItems}
+          onChangeItem={setSelectedItem}
+        />
+      )}
     </motion.div>
   );
 }
