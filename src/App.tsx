@@ -212,7 +212,7 @@ export default function App() {
           setSelectedItem={setSelectedItem}
           onBackToHome={() => setCurrentPage('home')}
         />
-        <WhatsAppButton />
+        {!selectedItem && <WhatsAppButton />}
       </div>
     );
   }
@@ -1031,7 +1031,7 @@ export default function App() {
       />
 
       {/* WhatsApp Floating Instant Chat Button */}
-      <WhatsAppButton />
+      {!selectedItem && <WhatsAppButton />}
 
     </div>
   );
