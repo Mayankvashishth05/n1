@@ -191,13 +191,20 @@ export default function PortfolioArchive({
                 className="glow-card rounded-2xl overflow-hidden cursor-pointer group flex flex-col justify-between"
               >
                 {/* Image Wrap */}
-                <div className="h-64 sm:h-72 bg-[#1b1b1b]/50 overflow-hidden relative border-b border-white/5">
-                  <LazyImage
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="group-hover:scale-105 transition-transform duration-500"
+                <div className="h-64 sm:h-72 bg-[#1b1b1b]/50 overflow-hidden relative border-b border-white/5 flex items-center justify-center">
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center blur-xl opacity-35 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${item.imageUrl})` }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-5">
+                  <div className="relative w-full h-full flex items-center justify-center p-2 z-10">
+                    <LazyImage
+                      src={item.imageUrl}
+                      alt={item.title}
+                      objectFit="contain"
+                      className="max-w-full max-h-full group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-5 z-20">
                     <span className="text-[9px] font-mono tracking-widest font-semibold text-[#2cc3e6] inline-flex items-center space-x-1">
                       <span>OPEN SPECIFICATION CASE STUDY</span>
                       <ExternalLink size={10} />

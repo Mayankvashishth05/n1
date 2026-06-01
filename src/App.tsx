@@ -543,13 +543,20 @@ export default function App() {
                 className="glow-card rounded-2xl overflow-hidden cursor-pointer group flex flex-col justify-between"
               >
                 {/* Image Wrap */}
-                <div className="h-64 sm:h-72 bg-[#1b1b1b] overflow-hidden relative border-b border-white/5">
-                  <LazyImage
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="group-hover:scale-105 transition-transform duration-500"
+                <div className="h-64 sm:h-72 bg-[#1b1b1b] overflow-hidden relative border-b border-white/5 flex items-center justify-center">
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center blur-xl opacity-30 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${item.imageUrl})` }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                  <div className="relative w-full h-full flex items-center justify-center p-2 z-10">
+                    <LazyImage
+                      src={item.imageUrl}
+                      alt={item.title}
+                      objectFit="contain"
+                      className="max-w-full max-h-full group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 z-20">
                     <span className="text-[10px] font-mono tracking-widest font-semibold text-[#2cc3e6]">CLICK TO VIEW SHOWCASE DETAILS</span>
                   </div>
                 </div>

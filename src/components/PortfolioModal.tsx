@@ -60,12 +60,16 @@ export default function PortfolioModal({ item, onClose, onDelete }: PortfolioMod
           <div className="grid grid-cols-1 md:grid-cols-12">
             
             {/* Project Image */}
-            <div className="md:col-span-7 bg-[#1b1b1b] flex items-center justify-center min-h-[350px] md:min-h-[480px] border-b-4 md:border-b-0 md:border-r-4 border-[#1b1b1b]">
+            <div className="md:col-span-7 bg-[#1b1b1b] flex items-center justify-center min-h-[350px] md:min-h-[480px] border-b-4 md:border-b-0 md:border-r-4 border-[#1b1b1b] relative overflow-hidden">
+              <div 
+                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-40 scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${item.imageUrl})` }}
+              />
               <img
                 src={item.imageUrl}
                 alt={item.title}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover max-h-[480px]"
+                className="relative max-w-full max-h-[480px] object-contain z-10 p-4"
               />
             </div>
 

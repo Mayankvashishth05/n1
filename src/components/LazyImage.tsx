@@ -10,6 +10,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   alt: string;
   className?: string;
   containerClassName?: string;
+  objectFit?: 'cover' | 'contain' | 'fill';
 }
 
 export default function LazyImage({
@@ -17,6 +18,7 @@ export default function LazyImage({
   alt,
   className = '',
   containerClassName = '',
+  objectFit = 'cover',
   ...props
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -38,7 +40,9 @@ export default function LazyImage({
         loading="lazy"
         onLoad={() => setIsLoaded(true)}
         referrerPolicy="no-referrer"
-        className={`w-full h-full object-cover transition-all duration-750 ease-out ${
+        className={`w-full h-full transition-all duration-750 ease-out ${
+          objectFit === 'contain' ? 'object-contain' : objectFit === 'fill' ? 'object-fill' : 'object-cover'
+        } ${
           isLoaded 
             ? 'opacity-100 scale-100 blur-0' 
             : 'opacity-0 scale-105 blur-md'

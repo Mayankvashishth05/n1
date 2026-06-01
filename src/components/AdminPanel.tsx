@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Lock, Unlock, Database, Plus, Trash, Eye, 
   Settings, MessageSquare, Layers, Check, Download, AlertCircle, FileText, Mail, Phone,
-  Upload, Image
+  Upload, Image, Pencil
 } from 'lucide-react';
 import { PortfolioItem, ClientReview, QuoteRequest } from '../types';
 import { 
@@ -34,6 +34,7 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
   const [customPasscode, setCustomPasscode] = useState('');
   const [selectedQuoteIds, setSelectedQuoteIds] = useState<string[]>([]);
+  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
 
   // Form states for adding Portfolio
   const [newTitle, setNewTitle] = useState('');
@@ -120,28 +121,72 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
       return;
     }
 
-    const newItem: PortfolioItem = {
-      id: `custom-${Date.now()}`,
-      title: newTitle,
-      category: newCategory,
-      description: newDesc,
-      imageUrl: newImgUrl,
-      date: new Date().toISOString().split('T')[0],
-      client: newClient || 'Niorpixel Client',
-      isFeatured: true
-    };
+    if (editingItem) {
+      const updated = portfolio.map(item => {
+        if (item.id === editingItem.id) {
+          return {
+            ...item,
+            title: newTitle,
+            category: newCategory,
+            description: newDesc,
+            imageUrl: newImgUrl,
+            client: newClient || 'Niorpixel Client'
+          };
+        }
+        return item;
+      });
 
-    const updated = [newItem, ...portfolio];
-    setPortfolio(updated);
-    saveStoredPortfolio(updated);
-    onRefreshData();
+      setPortfolio(updated);
+      saveStoredPortfolio(updated);
+      onRefreshData();
 
-    // Reset fields
+      setEditingItem(null);
+      setNewTitle('');
+      setNewDesc('');
+      setNewClient('');
+      setSuccessMsg('Portfolio item updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } else {
+      const newItem: PortfolioItem = {
+        id: `custom-${Date.now()}`,
+        title: newTitle,
+        category: newCategory,
+        description: newDesc,
+        imageUrl: newImgUrl,
+        date: new Date().toISOString().split('T')[0],
+        client: newClient || 'Niorpixel Client',
+        isFeatured: true
+      };
+
+      const updated = [newItem, ...portfolio];
+      setPortfolio(updated);
+      saveStoredPortfolio(updated);
+      onRefreshData();
+
+      // Reset fields
+      setNewTitle('');
+      setNewDesc('');
+      setNewClient('');
+      setSuccessMsg('Portfolio item added successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    }
+  };
+
+  const handleStartEdit = (item: PortfolioItem) => {
+    setEditingItem(item);
+    setNewTitle(item.title);
+    setNewCategory(item.category);
+    setNewDesc(item.description);
+    setNewClient(item.client || '');
+    setNewImgUrl(item.imageUrl);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItem(null);
     setNewTitle('');
     setNewDesc('');
     setNewClient('');
-    setSuccessMsg('Portfolio item added successfully!');
-    setTimeout(() => setSuccessMsg(''), 3000);
+    setNewImgUrl('/logo.png');
   };
 
   const handleDeletePortfolio = (id: string) => {
@@ -413,11 +458,28 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
                       </p>
                     </div>
 
-                    {/* Add Item Form */}
+                    {/* Add/Edit Item Form */}
                     <form onSubmit={handleAddPortfolio} className="bg-[#1b1b1b]/5 p-5 rounded-xl border-2 border-[#1b1b1b] space-y-4">
-                      <div className="flex items-center space-x-2 border-b border-[#1b1b1b]/10 pb-2 mb-2">
-                        <Plus size={16} className="text-brand-accent" />
-                        <span className="font-display font-bold text-xs tracking-wide uppercase">Add New Graphic Suite/Design</span>
+                      <div className="flex items-center justify-between border-b border-[#1b1b1b]/10 pb-2 mb-2">
+                        <div className="flex items-center space-x-2">
+                          {editingItem ? (
+                            <Pencil size={16} className="text-brand-accent animate-pulse" />
+                          ) : (
+                            <Plus size={16} className="text-brand-accent" />
+                          )}
+                          <span className="font-display font-bold text-xs tracking-wide uppercase">
+                            {editingItem ? `Edit Studio Project: ${editingItem.title}` : 'Add New Graphic Suite/Design'}
+                          </span>
+                        </div>
+                        {editingItem && (
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="text-[10px] font-mono text-[#6835d0] hover:underline uppercase font-bold cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -522,12 +584,23 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
                         />
                       </div>
 
-                      <button
-                        type="submit"
-                        className="bg-[#1b1b1b] hover:bg-brand-accent text-[#ece7e5] px-5 py-2.5 font-display font-medium text-xs rounded-lg tracking-widest uppercase border-2 border-[#1b1b1b] custom-shadow-brand transition-all cursor-pointer"
-                      >
-                        Add to Gallery
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          type="submit"
+                          className="bg-[#1b1b1b] hover:bg-brand-accent text-[#ece7e5] px-5 py-2.5 font-display font-medium text-xs rounded-lg tracking-widest uppercase border-2 border-[#1b1b1b] custom-shadow-brand transition-all cursor-pointer"
+                        >
+                          {editingItem ? 'Save Changes' : 'Add to Gallery'}
+                        </button>
+                        {editingItem && (
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="bg-transparent border-2 border-dashed border-[#1b1b1b]/30 hover:border-[#1b1b1b] text-brand-dark px-5 py-2.5 font-display font-medium text-xs rounded-lg tracking-widest uppercase transition-all cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                      </div>
                     </form>
 
                     {/* Manage List Grid */}
@@ -548,13 +621,26 @@ export default function AdminPanel({ onClose, onRefreshData }: AdminPanelProps) 
                               </div>
                             </div>
 
-                            <button
-                              onClick={() => handleDeletePortfolio(item.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 hover:text-red-700 border border-transparent hover:border-red-600 rounded-lg transition-all cursor-pointer"
-                              title="Delete Item"
-                            >
-                              <Trash size={15} />
-                            </button>
+                            <div className="flex items-center space-x-1 shrink-0">
+                              <button
+                                onClick={() => handleStartEdit(item)}
+                                className={`p-2 border rounded-lg transition-all cursor-pointer ${
+                                  editingItem?.id === item.id
+                                    ? 'bg-brand-accent text-white border-brand-accent shadow'
+                                    : 'text-brand-dark hover:bg-[#1b1b1b]/10 hover:text-[#1b1b1b] border-transparent'
+                                }`}
+                                title="Edit Item"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePortfolio(item.id)}
+                                className="p-2 text-red-600 hover:bg-red-50 hover:text-red-700 border border-transparent hover:border-red-600 rounded-lg transition-all cursor-pointer"
+                                title="Delete Item"
+                              >
+                                <Trash size={14} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
